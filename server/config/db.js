@@ -3,10 +3,21 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Holiday = require('../models/Holiday');
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
+
+
+const connectToDB = async () => {
+  try {
+    mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  },()=>{
+  console.log('MongoDB connection successful');
+  });    
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);  
+  }
+}
 
 const createDefaultAdmin = async () => {
   const adminCount = await User.countDocuments({ role: 'admin' });
@@ -36,4 +47,4 @@ const addSampleHolidays = async () => {
   }
 };
 
-module.exports = { createDefaultAdmin, addSampleHolidays };
+module.exports = { createDefaultAdmin, addSampleHolidays, connectToDB };

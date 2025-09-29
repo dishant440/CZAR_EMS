@@ -3,7 +3,7 @@ const authRoutes = require('./authRoutes');
 const adminRoutes = require('./adminRoutes');
 const employeeRoutes = require('./employeeRoutes');
 const holidayRoutes = require('./holidayRoutes');
-const leaveRequestRoutes = require('./leaveRequestRoutes');
+const leaveRequestRoutes = require('./LeaveRequestRoutes');
 
 const router = express.Router();
 

@@ -1,8 +1,6 @@
 const express = require('express');
-const { verifyToken, verifyAdmin } = require('../middlewares/authMiddleware');
 const LeaveRequest = require('../models/LeaveRequest');
 
-// Example: public simplified endpoints
 const router = express.Router();
 
 router.get('/', async (req, res) => {
