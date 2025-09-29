@@ -4,8 +4,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
-const axios = require('axios');
-const nodemailer = require('nodemailer');
+
 require('dotenv').config();
 
 const app = express();
@@ -16,101 +15,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/CzarCore', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-  maxPoolSize: 10
-})
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
-
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'employee'], default: 'employee' },
-  googleId: { type: String },
-  avatar: { type: String },
-  resetToken: { type: String },
-  resetTokenExpiry: { type: Date },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-const employeeSchema = new mongoose.Schema({
-  employeeId: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
-  personalEmail: { type: String, required: true },
-  workEmail: { type: String, required: true, unique: true },
-  dateOfBirth: { type: Date, required: true },
-  dateOfJoining: { type: Date, required: true },
-  availableLeaves: { type: Number, default: 20 },
-  department: { type: String, required: true },
-  position: { type: String, required: true },
-  role: { type: String, required: true },
-  profilePhoto: { type: String, default: '' },
-  workPassword: { type: String, required: true },
-  phone: { type: String, default: '' },
-  address: { type: String, default: '' },
-  salary: { type: Number },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-const User = mongoose.model('User', userSchema);
-const Employee = mongoose.model('Employee', employeeSchema);
-
-const holidaySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  date: { type: Date, required: true },
-  type: { type: String, enum: ['public', 'company'], default: 'public' },
-  year: { type: Number, required: true },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const leaveRequestSchema = new mongoose.Schema({
-  employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true },
-  leaveType: { type: String, enum: ['sick', 'casual', 'annual', 'emergency'], required: true },
-  fromDate: { type: Date, required: true },
-  toDate: { type: Date, required: true },
-  days: { type: Number, required: true },
-  reason: { type: String, required: true },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  appliedAt: { type: Date, default: Date.now },
-  reviewedAt: { type: Date },
-  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-});
-
-const Holiday = mongoose.model('Holiday', holidaySchema);
-const LeaveRequest = mongoose.model('LeaveRequest', leaveRequestSchema);
 
 // Email transporter setup
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
 
-// Send email function
-const sendEmail = async (to, subject, html) => {
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to,
-      subject,
-      html
-    });
-    return true;
-  } catch (error) {
-    console.error('Email send error:', error);
-    return false;
-  }
-};
 
 // User registration (admin or employee)
 app.post('/api/register', async (req, res) => {
