@@ -63,7 +63,7 @@ function EmployeeDashboard() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/employees');
+      const response = await fetch('http://localhost:5000/api/employees');
       const data = await response.json();
       setEmployees(data);
     } catch (error) {
@@ -73,7 +73,7 @@ function EmployeeDashboard() {
 
   const fetchHolidays = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/holidays');
+      const response = await fetch('http://localhost:5000/api/holidays');
       const data = await response.json();
       setHolidays(data);
     } catch (error) {
@@ -84,7 +84,7 @@ function EmployeeDashboard() {
   const fetchEmployeeProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/employee/profile', {
+      const response = await fetch('http://localhost:5000/api/employee/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -97,7 +97,7 @@ function EmployeeDashboard() {
   const fetchMyLeaveRequests = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/employee/my-leave-requests', {
+      const response = await fetch('http://localhost:5000/api/employee/my-leave-requests', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -111,7 +111,7 @@ function EmployeeDashboard() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/employee/leave-requests', {
+      const response = await fetch('http://localhost:5000/api/employee/leave-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ function EmployeeDashboard() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5002/api/employees/${employeeProfile._id}`, {
+      const response = await fetch(`http://localhost:5000/api/employees/${employeeProfile._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +187,7 @@ function EmployeeDashboard() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/employee/change-password', {
+      const response = await fetch('http://localhost:5000/api/employee/change-password', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

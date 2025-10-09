@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import config from './config';
@@ -15,7 +14,7 @@ function App() {
     <Router>
       <div className="App" style={{backgroundColor: '#f3f4f6', minHeight: '100vh'}}>
         <Routes>
-          <Route path="/" element={<><Navbar /><LandingPage /></>} />
+          {/* <Route path="/" element={<><Navbar /><LandingPage /></>} /> */}
           <Route path="/auth" element={<><Navbar /><AuthPage /></>} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminPanel />} />

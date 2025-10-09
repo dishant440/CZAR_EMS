@@ -238,7 +238,7 @@ function AdminPanel() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/employees');
+      const response = await fetch('http://localhost:5000/api/employees');
       const data = await response.json();
       setEmployees(data);
     } catch (error) {
@@ -248,7 +248,7 @@ function AdminPanel() {
 
   const fetchHolidays = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/holidays');
+      const response = await fetch('http://localhost:5000/api/holidays');
       const data = await response.json();
       setHolidays(data);
     } catch (error) {
@@ -258,7 +258,7 @@ function AdminPanel() {
 
   const fetchLeaveRequests = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/leave-requests');
+      const response = await fetch('http://localhost:5000/api/leave-requests');
       const data = await response.json();
       setLeaveRequests(data);
     } catch (error) {
@@ -599,8 +599,8 @@ function AdminPanel() {
       }
       
       const url = editingEmployee 
-        ? `http://localhost:5002/api/employees/${editingEmployee._id}`
-        : 'http://localhost:5002/api/employees';
+        ? `http://localhost:5000/api/employees/${editingEmployee._id}`
+        : 'http://localhost:5000/api/employees';
       const method = editingEmployee ? 'PUT' : 'POST';
       
       // Sanitize form data before sending
@@ -666,8 +666,8 @@ function AdminPanel() {
     
     try {
       const url = editingHoliday 
-        ? `http://localhost:5002/api/holidays/${editingHoliday._id}`
-        : 'http://localhost:5002/api/holidays';
+        ? `http://localhost:5000/api/holidays/${editingHoliday._id}`
+        : 'http://localhost:5000/api/holidays';
       const method = editingHoliday ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -736,7 +736,7 @@ function AdminPanel() {
     
     showPopup('warning', `${action.toUpperCase()} Leave Request`, confirmMessage, async () => {
       try {
-        const response = await fetch(`http://localhost:5002/api/leave-requests/${request._id}`, {
+        const response = await fetch(`http://localhost:5000/api/leave-requests/${request._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -802,7 +802,7 @@ function AdminPanel() {
     showPopup('warning', 'Delete Employee', 'Are you sure you want to delete this employee? This action cannot be undone.', async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5002/api/employees/${id}`, {
+        const response = await fetch(`http://localhost:5000/api/employees/${id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -824,7 +824,7 @@ function AdminPanel() {
   const handleHolidayDelete = async (holiday) => {
     showPopup('warning', 'Delete Holiday', `Are you sure you want to delete "${holiday.name}"? This action cannot be undone.`, async () => {
       try {
-        const response = await fetch(`http://localhost:5002/api/holidays/${holiday._id}`, {
+        const response = await fetch(`http://localhost:5000/api/holidays/${holiday._id}`, {
           method: 'DELETE'
         });
         
