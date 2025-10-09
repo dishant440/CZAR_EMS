@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const Employee = require('../models/Employee');
-const LeaveRequest = require('../models/LeaveRequest');
-const { sendEmail } = require('../services/emailService');
+const User = require('../model/userModel');
+const Employee = require('../model/employeeModel');
+const LeaveRequest = require('../model/leaveRequest');
+const { sendEmail } = require('../utils/emailService');
 
 // Admin: Get all employees
 exports.getUsers = async (req, res) => {

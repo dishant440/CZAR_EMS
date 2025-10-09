@@ -1,4 +1,4 @@
-const Holiday = require('../models/Holiday');
+const Holiday = require('../model/holiday');
 
 // Get all holidays
 exports.getAllHolidays = async (req, res) => {

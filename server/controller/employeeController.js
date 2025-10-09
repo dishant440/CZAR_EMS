@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const Employee = require('../models/Employee');
-const LeaveRequest = require('../models/LeaveRequest');
+const User = require('../model/userModel');
+const Employee = require('../model/employeeModel');
+const LeaveRequest = require('../model/leaveRequest');
 
 // Get profile
 exports.getProfile = async (req, res) => {

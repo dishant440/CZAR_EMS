@@ -24,8 +24,9 @@ app.use('/api', routes);
 // Error handler
 app.use(errorHandler);
 
-await connectToDB();
+const startServer = async () => {
+  await connectToDB();
+  app.listen(5000, () => console.log('🚀 CzarCore server running on port 5000'));
+};
 
-app.listen(PORT, () => {
-  console.log(`🚀 CzarCore server running on port ${PORT}`);
-});
+startServer();

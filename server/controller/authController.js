@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
-const User = require('../models/User');
-const Employee = require('../models/Employee');
+const User = require('../model/userModel');
+const Employee = require('../utils/emailService');
 
 exports.register = async (req, res) => {
   try {

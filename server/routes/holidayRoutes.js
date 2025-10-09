@@ -1,6 +1,6 @@
 const express = require('express');
-const { verifyToken, verifyAdmin } = require('../middlewares/authMiddleware');
-const { getAllHolidays, getHolidaysByYear, addHoliday, updateHoliday, deleteHoliday } = require('../controllers/holidayController');
+const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
+const { getAllHolidays, getHolidaysByYear, addHoliday, updateHoliday, deleteHoliday } = require('../controller/holidayController');
 
 const router = express.Router();
 
