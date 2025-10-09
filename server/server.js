@@ -8,7 +8,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { connectToDB } = require('./config/db');
 
 const app = express();
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5000;
 
 
 app.use(cors({
@@ -26,7 +26,7 @@ app.use(errorHandler);
 
 const startServer = async () => {
   await connectToDB();
-  app.listen(5000, () => console.log('🚀 CzarCore server running on port 5000'));
+  app.listen(PORT, () => console.log('🚀 CzarCore server running on port 5000'));
 };
 
 startServer();
