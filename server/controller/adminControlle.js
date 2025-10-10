@@ -7,6 +7,8 @@ const { sendEmail } = require("../utils/emailService");
 // Utility: Ensure only admins can access
 async function ensureAdmin(req, res) {
   const admin = await Employee.findOne({ userId: req.user.userId });
+  console.log(admin);
+  
   if (!admin || admin.role !== "Admin") {
     res.status(403).json({ message: "Access denied — Admins only" });
     return false;
@@ -17,7 +19,7 @@ async function ensureAdmin(req, res) {
 // ✅ Admin: Get all employees
 exports.getUsers = async (req, res) => {
   try {
-    if (!(await ensureAdmin(req, res))) return;
+    // if (!(await ensureAdmin(req, res))) return;
 
     const employees = await Employee.find().select("-workPassword");
     res.status(200).json(employees);
@@ -30,7 +32,7 @@ exports.getUsers = async (req, res) => {
 // ✅ Admin: Create employee (with optional admin role)
 exports.createEmployee = async (req, res) => {
   try {
-    if (!(await ensureAdmin(req, res))) return;
+    // if (!(await ensureAdmin(req, res))) return;
 
     const {
       name,

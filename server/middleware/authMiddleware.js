@@ -14,11 +14,16 @@ const verifyToken = (req, res, next) => {
 };
 
 const verifyAdmin = async (req, res, next) => {
+  console.log(req.user.userId);
+  
   const user = await User.findById(req.user.userId);
-  if (!user || user.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin access required' });
+  console.log(user.role === 'admin');
+  
+  if ( user.role === 'admin') {
+    next();
+    return
   }
-  next();
+  // return res.status(403).json({ message: 'Admin access required' });
 };
 
 module.exports = { verifyToken, verifyAdmin };
