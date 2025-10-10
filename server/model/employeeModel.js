@@ -10,7 +10,11 @@ const employeeSchema = new mongoose.Schema({
   availableLeaves: { type: Number, default: 20 },
   department: String,
   position: String,
-  role: { type: String, default: 'Employee' },
+  role: { 
+  type: String, 
+  enum: ['Employee', 'Admin'], 
+  default: 'Employee' 
+},
   phone: String,
   address: String,
   profilePhoto: String,
