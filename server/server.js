@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://czarcore.netlify.app', /\.netlify\.app$/],
+  origin: ['http://localhost:5173', 'https://czarcore.netlify.app', /\.netlify\.app$/],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
