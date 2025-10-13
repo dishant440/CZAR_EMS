@@ -4,16 +4,50 @@ const Employee = require('../model/employeeModel');
 const LeaveRequest = require('../model/leaveRequest');
 
 // ✅ Get employee profile (self or admin access)
+// exports.getProfile = async (req, res) => {
+//   try {
+//     const userId = req.user.userId;
+
+//     const employee = await Employee.findOne({ userId }).select('-workPassword');
+//     if (!employee) {
+//       return res.status(404).json({ message: 'Profile not found' });
+//     }
+
+//     res.status(200).json(employee);
+//   } catch (error) {
+//     console.error('Get Profile Error:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+// ✅ Get employee profile along with leave requests
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
+    console.log(userId);
+    
 
+    // Find employee
     const employee = await Employee.findOne({ userId }).select('-workPassword');
     if (!employee) {
       return res.status(404).json({ message: 'Profile not found' });
     }
 
-    res.status(200).json(employee);
+    console.log(employee);
+    
+    // Fetch all leave requests by this employee
+    const leaveRequests = await LeaveRequest.find({ employeeId: employee._id })
+      .sort({ appliedAt: -1 })
+      .select('-__v'); // clean response
+
+    // Combine both data sets into one response payload
+    const responsePayload = {
+      ...employee.toObject(),
+      leaveRequests, // ✅ attach leave request list
+    };
+
+    res.status(200).json(responsePayload);
   } catch (error) {
     console.error('Get Profile Error:', error);
     res.status(500).json({ message: 'Server error' });
