@@ -227,3 +227,75 @@ exports.reviewLeaveRequest = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+// ✅ GET /api/admin/dashboard
+exports.getAdminDashboard = async (req, res) => {
+  try {
+    // 1️⃣ Total Employees
+    const totalEmployees = await Employee.countDocuments();
+
+    // 2️⃣ Today's Date (without time)
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    // 3️⃣ On Leave Today
+    const onLeaveToday = await LeaveRequest.countDocuments({
+      status: "Approved",
+      fromDate: { $lte: todayStr },
+      toDate: { $gte: todayStr },
+    });
+
+    // 4️⃣ Attendance Summary (Present / Absent)
+    const todayAttendance = 9
+    const presentCount =8
+    const absentCount = 1
+
+    // 5️⃣ Pending Leave Requests
+    const pendingRequests = await LeaveRequest.find({ status: "Pending" })
+      .limit(5)
+      .populate("employeeId", "name");
+
+    const leaveRequests = pendingRequests.map((r) => ({
+      employeeName: r.employeeId?.name || "Unknown",
+      leaveType: r.leaveType,
+      fromDate: r.fromDate,
+      toDate: r.toDate,
+      status: r.status,
+    }));
+
+    // 6️⃣ Upcoming Birthdays (next 7 days)
+    const employees = await Employee.find({}, "name dateOfBirth");
+    const now = new Date();
+    const upcomingBirthdays = employees
+      .filter((emp) => {
+        if (!emp.dateOfBirth) return false;
+        const dob = new Date(emp.dateOfBirth);
+        const upcomingBirthday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+        const diffDays = Math.ceil((upcomingBirthday - now) / (1000 * 60 * 60 * 24));
+        return diffDays >= 0 && diffDays <= 7;
+      })
+      .map((emp) => ({
+        name: emp.name,
+        date: new Date(emp.dateOfBirth).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+      }));
+
+    // ✅ Response
+    res.status(200).json({
+      totalEmployees,
+      onLeaveToday,
+      attendanceSummary: { present: presentCount, absent: absentCount },
+      leaveRequests,
+      upcomingBirthdays,
+    });
+  } catch (error) {
+    console.error("Error fetching admin dashboard:", error);
+    res.status(500).json({ message: "Server error fetching admin dashboard" });
+  }
+};
