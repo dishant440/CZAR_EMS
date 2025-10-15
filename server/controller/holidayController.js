@@ -21,30 +21,66 @@ exports.getHolidaysByYear = async (req, res) => {
 };
 
 // Add holiday
+// exports.addHoliday = async (req, res) => {
+//   try {
+//     const { name, date, type } = req.body;
+//     const year = new Date(date).getFullYear();
+
+//     const holiday = await new Holiday({ name, date, type, year }).save();
+//     res.status(201).json({ message: 'Holiday added successfully', holiday });
+//   } catch {
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+// // Update holiday
+// exports.updateHoliday = async (req, res) => {
+//   try {
+//     const { name, date, type } = req.body;
+//     const year = new Date(date).getFullYear();
+
+//     const holiday = await Holiday.findByIdAndUpdate(req.params.id, { name, date, type, year }, { new: true });
+//     if (!holiday) return res.status(404).json({ message: 'Holiday not found' });
+
+//     res.json({ message: 'Holiday updated successfully', holiday });
+//   } catch {
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+// Add holiday
 exports.addHoliday = async (req, res) => {
   try {
-    const { name, date, type } = req.body;
-    const year = new Date(date).getFullYear();
+    const { name, fromDate, toDate, type } = req.body;
+    const year = new Date(fromDate).getFullYear();
 
-    const holiday = await new Holiday({ name, date, type, year }).save();
-    res.status(201).json({ message: 'Holiday added successfully', holiday });
-  } catch {
-    res.status(500).json({ message: 'Server error' });
+    const holiday = await new Holiday({ name, fromDate, toDate, type, year }).save();
+    res.status(201).json({ message: "Holiday added successfully", holiday });
+  } catch (err) {
+    console.error("Add Holiday Error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 // Update holiday
 exports.updateHoliday = async (req, res) => {
   try {
-    const { name, date, type } = req.body;
-    const year = new Date(date).getFullYear();
+    const { name, fromDate, toDate, type } = req.body;
+    const year = new Date(fromDate).getFullYear();
 
-    const holiday = await Holiday.findByIdAndUpdate(req.params.id, { name, date, type, year }, { new: true });
-    if (!holiday) return res.status(404).json({ message: 'Holiday not found' });
+    const holiday = await Holiday.findByIdAndUpdate(
+      req.params.id,
+      { name, fromDate, toDate, type, year },
+      { new: true }
+    );
 
-    res.json({ message: 'Holiday updated successfully', holiday });
-  } catch {
-    res.status(500).json({ message: 'Server error' });
+    if (!holiday) return res.status(404).json({ message: "Holiday not found" });
+
+    res.json({ message: "Holiday updated successfully", holiday });
+  } catch (err) {
+    console.error("Update Holiday Error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 

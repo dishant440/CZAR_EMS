@@ -1,10 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const holidaySchema = new mongoose.Schema({
-  name: String,
-  date: Date,
-  type: String,
-  year: Number
-});
+const holidaySchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    fromDate: { type: Date, required: true },
+    toDate: { type: Date, required: true },
+    type: { type: String, enum: ["National", "Festival", "Optional"], required: true },
+    year: { type: Number, required: true },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('Holiday', holidaySchema);
+module.exports = mongoose.model("Holiday", holidaySchema);
