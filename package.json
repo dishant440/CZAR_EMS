@@ -2,6 +2,7 @@
   "name": "czarcore-backend",
   "version": "1.0.0",
   "main": "server/server.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node server/server.js",
     "dev": "concurrently \"npm start\" \"cd client && npm run dev\"",
