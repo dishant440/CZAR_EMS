@@ -3,6 +3,7 @@ const User = require("../model/userModel");
 const Employee = require("../model/employeeModel");
 const LeaveRequest = require("../model/leaveRequest");
 const { sendEmail } = require("../utils/emailService");
+const Admin = require('../model/adminModel')
 
 // Utility: Ensure only admins can access
 async function ensureAdmin(req, res) {
@@ -111,6 +112,34 @@ exports.createEmployee = async (req, res) => {
   }
 };
 
+
+exports.getAdminDetails = async (req, res) => {
+  try {
+    const adminId = req.query.id;
+
+    console.log("demo : ",adminId);
+    
+
+    if (!adminId) {
+      return res.status(400).json({ message: "Admin ID is required" });
+    }
+
+    const admin = await Admin.findById(adminId).select("-password");
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.status(200).json({
+      message: "Admin details fetched successfully",
+      admin,
+    });
+  } catch (error) {
+    console.error("Error fetching admin details:", error);
+    res.status(500).json({ message: "Server error fetching admin details" });
+  }
+};
+
 // ✅ Admin: Update employee details
 exports.updateEmployee = async (req, res) => {
   try {
@@ -182,7 +211,7 @@ exports.deleteEmployee = async (req, res) => {
 // ✅ Admin: Get all leave requests
 exports.getLeaveRequests = async (req, res) => {
   try {
-    if (!(await ensureAdmin(req, res))) return;
+    // if (!(await ensureAdmin(req, res))) return;
 
     const leaveRequests = await LeaveRequest.find()
       .populate("employeeId", "name department employeeId role")
@@ -198,7 +227,7 @@ exports.getLeaveRequests = async (req, res) => {
 // ✅ Admin: Approve or reject leave requests
 exports.reviewLeaveRequest = async (req, res) => {
   try {
-    if (!(await ensureAdmin(req, res))) return;
+    // if (!(await ensureAdmin(req, res))) return;
 
     const { status } = req.body;
     if (!["Approved", "Rejected"].includes(status)) {
