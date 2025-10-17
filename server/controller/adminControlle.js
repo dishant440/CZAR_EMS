@@ -21,8 +21,12 @@ async function ensureAdmin(req, res) {
 exports.getUsers = async (req, res) => {
   try {
     // if (!(await ensureAdmin(req, res))) return;
+    console.log("hii");
+    
 
     const employees = await Employee.find().select("-workPassword");
+    console.log(employees);
+    
     res.status(200).json(employees);
   } catch (error) {
     console.error("Get Users Error:", error);
@@ -120,11 +124,13 @@ exports.getAdminDetails = async (req, res) => {
     console.log("demo : ",adminId);
     
 
-    if (!adminId) {
-      return res.status(400).json({ message: "Admin ID is required" });
-    }
+    // if (!adminId) {
+    //   return res.status(400).json({ message: "Admin ID is required" });
+    // }
 
     const admin = await Admin.findById(adminId).select("-password");
+    console.log("admin : ",admin);
+    
 
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });

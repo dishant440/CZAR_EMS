@@ -1,15 +1,16 @@
 const express = require('express');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
-const { getUsers, createEmployee, updateEmployee, deleteEmployee, getLeaveRequests, reviewLeaveRequest, getAdminDashboard } = require('../controller/adminControlle');
+const { getUsers, createEmployee, updateEmployee, deleteEmployee, getLeaveRequests, reviewLeaveRequest, getAdminDashboard, getAdminDetails } = require('../controller/adminControlle');
 
 const router = express.Router();
 
-router.get('/users', verifyToken, verifyAdmin, getUsers);
+router.get('/all-employees', getUsers);
 router.get('/admin-dashboard', getAdminDashboard)
-router.post('/employees', verifyToken, verifyAdmin, createEmployee);
-router.put('/employees/:id', verifyToken, verifyAdmin, updateEmployee);
-router.delete('/employees/:id', verifyToken, verifyAdmin, deleteEmployee);
-router.get('/leave-requests', verifyToken, verifyAdmin, getLeaveRequests);
-router.put('/leave-requests/:id', verifyToken, verifyAdmin, reviewLeaveRequest);
+router.get('/get-admin-details', getAdminDetails)
+router.post('/employees', createEmployee);
+router.put('/employees/:id', updateEmployee);
+router.delete('/employees/:id', deleteEmployee);
+router.get('/leave-requests', getLeaveRequests);
+router.put('/leave-requests/:id', reviewLeaveRequest);
 
 module.exports = router;

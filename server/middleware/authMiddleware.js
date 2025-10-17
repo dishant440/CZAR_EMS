@@ -18,7 +18,8 @@ const verifyAdmin = async (req, res, next) => {
   console.log(req.user.userId);
   
   const user = await Admin.findById(req.user.userId);
-  console.log(user.role === 'admin');
+  // console.log(user.role === 'admin');
+  console.log("user : ", user);
   
   if ( user.role === 'admin') {
     next();

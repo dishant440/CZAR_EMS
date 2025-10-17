@@ -49,19 +49,68 @@ exports.getHolidaysByYear = async (req, res) => {
 // };
 
 
-// Add holiday
 exports.addHoliday = async (req, res) => {
   try {
-    const { name, fromDate, toDate, type } = req.body;
-    const year = new Date(fromDate).getFullYear();
 
-    const holiday = await new Holiday({ name, fromDate, toDate, type, year }).save();
-    res.status(201).json({ message: "Holiday added successfully", holiday });
-  } catch (err) {
-    console.error("Add Holiday Error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.log("function called");
+    
+    let { name, fromDate, toDate, type } = req.body;
+
+    console.log(req.body);
+    
+
+    if (!name || !fromDate || !toDate || !type) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+const start = new Date(fromDate);
+const end = new Date(toDate);
+
+if (start.getTime() > end.getTime()) {
+  return res.status(400).json({ message: "From date cannot be after To date" });
+}
+
+    const year = start.getFullYear();
+
+    // Check if an existing holiday overlaps the same day(s)
+    const existing = await Holiday.findOne({
+      $or: [
+        {
+          fromDate: { $lte: end },
+          toDate: { $gte: start },
+        },
+      ],
+    });
+
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: "Holiday already exists in this date range" });
+    }
+
+    // ✅ Create and save
+    const holiday = new Holiday({
+      name,
+      fromDate: start,
+      toDate: end,
+      type,
+      year,
+    });
+
+    await holiday.save();
+
+    res.status(201).json({
+      message:
+        start.getTime() === end.getTime()
+          ? "Single-day holiday added successfully"
+          : "Holiday added successfully",
+      holiday,
+    });
+  } catch (error) {
+    console.error("Error adding holiday:", error);
+    res.status(500).json({ message: "Server error while adding holiday" });
   }
 };
+
 
 // Update holiday
 exports.updateHoliday = async (req, res) => {
