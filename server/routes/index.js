@@ -10,7 +10,7 @@ const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 router.use('/auth',verifyToken, authRoutes);
-router.use('/admin',verifyToken,verifyAdmin, adminRoutes);
+router.use('/admin',verifyToken, adminRoutes);
 router.use('/employee',verifyToken, employeeRoutes);
 router.use('/holidays',verifyToken, holidayRoutes);
 router.use('/leave-requests',verifyToken, leaveRequestRoutes);
