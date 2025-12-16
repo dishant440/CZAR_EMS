@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
 const User = require('../model/userModel');
-const Employee = require('../utils/emailService');
+const Employee = require('../model/employeeModel');
 const Admin = require('../model/adminModel')
 
 
@@ -24,6 +24,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
 
     const existingUser = await User.findOne({ email });
+    console.log("Existig user : ", existingUser)
+
     if (existingUser)
       return res.status(400).json({ message: "User already exists" });
 
@@ -41,6 +43,7 @@ exports.register = async (req, res) => {
         employeeId: `EMP${Date.now()}`,
         name,
         personalEmail: email,
+        phone : phoneNo,
         workEmail: email,
         dateOfBirth: new Date(),
         dateOfJoining: new Date(),
@@ -105,23 +108,23 @@ exports.adminLogin = async (req, res) => {
     const { email, password } = req.body;
 
     console.log("req, body : ", req.body);
-    
+
 
     if (!email || !password)
       return res.status(400).json({ message: "Email and password required" });
     console.log("email password : ", email, password);
-    
-    const admin = await Admin.findOne({ email }).select("+password");
+
+    const admin = await Admin.findOne({ email }).select("password name email");
     console.log(admin);
-    
-    // if (!admin)
-    //   return res.status(400).json({ message: "Invalid email or password" });
+
+    if (!admin)
+      return res.status(400).json({ message: "Invalid email or password" });
 
     const isMatch = await bcrypt.compare(password, admin.password);
-    
 
-    // if (!isMatch)
-    //   return res.status(400).json({ message: "Invalid email or password" });
+
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid email or password" });
 
     admin.lastLogin = new Date();
     await admin.save();

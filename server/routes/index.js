@@ -14,6 +14,6 @@ router.use('/admin',verifyToken, adminRoutes);
 router.use('/employee',verifyToken, employeeRoutes);
 router.use('/holidays',verifyToken, holidayRoutes);
 router.use('/leave-requests',verifyToken, leaveRequestRoutes);
-router.use('/attendance',attendanceRoute);
+router.use('/attendance', verifyToken, attendanceRoute);
 
 module.exports = router;

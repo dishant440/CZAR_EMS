@@ -3,8 +3,11 @@ const mongoose = require('mongoose');
 const leaveRequestSchema = new mongoose.Schema({
   employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
   leaveType: String,
+  leaveReasonType: String,
   fromDate: Date,
   toDate: Date,
+  fromTime: String,
+  toTime: String,
   days: Number,
   reason: String,
   status: { type: String, default: 'Pending' },

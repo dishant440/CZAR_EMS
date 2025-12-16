@@ -7,14 +7,16 @@ const Admin = require('../model/adminModel')
 
 // Utility: Ensure only admins can access
 async function ensureAdmin(req, res) {
-  const admin = await Employee.findOne({ userId: req.user.userId });
-  console.log(admin);
-  
-  if (!admin || admin.role !== "Admin") {
-    res.status(403).json({ message: "Access denied — Admins only" });
-    return false;
-  }
-  return true;
+  // 1. Check Employee collection (legacy admin check)
+  let admin = await Employee.findOne({ userId: req.user.userId });
+  if (admin && admin.role === "Admin") return true;
+
+  // 2. Check Admin collection (migrated admins)
+  admin = await Admin.findOne({ userId: req.user.userId });
+  if (admin && (admin.role === "admin" || admin.role === "superadmin")) return true;
+
+  res.status(403).json({ message: "Access denied — Admins only" });
+  return false;
 }
 
 // ✅ Admin: Get all employees
@@ -22,11 +24,11 @@ exports.getUsers = async (req, res) => {
   try {
     // if (!(await ensureAdmin(req, res))) return;
     console.log("hii");
-    
+
 
     const employees = await Employee.find().select("-workPassword");
     console.log(employees);
-    
+
     res.status(200).json(employees);
   } catch (error) {
     console.error("Get Users Error:", error);
@@ -37,29 +39,68 @@ exports.getUsers = async (req, res) => {
 // ✅ Admin: Create employee (with optional admin role)
 exports.createEmployee = async (req, res) => {
   try {
-    // if (!(await ensureAdmin(req, res))) return;
-
     const {
       name,
       personalEmail,
+      phone,
       dateOfBirth,
       dateOfJoining,
       department,
       position,
       employeeId,
-      role = "Employee", // 👈 optional role from admin panel
+      role = "Employee",
+      workEmail: manualWorkEmail, // Rename incoming field to manualWorkEmail to avoid ambiguity
     } = req.body;
 
-    if (
-      !name ||
-      !personalEmail ||
-      !dateOfBirth ||
-      !dateOfJoining ||
-      !department ||
-      !position ||
-      !employeeId
-    ) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Validate required fields
+    if (!name || !phone || !personalEmail || !manualWorkEmail || !dateOfBirth || !dateOfJoining || !department) {
+      return res.status(400).json({ message: "Name, phone, personal & work email, DOB, joining date, and department are required" });
+    }
+
+    // Check if work email already exists check in User collection
+    if (await User.findOne({ email: manualWorkEmail.toLowerCase() })) {
+      return res.status(400).json({ message: "Work email already exists" });
+    }
+
+    const dob = new Date(dateOfBirth);
+    const day = String(dob.getDate()).padStart(2, "0");
+    const month = String(dob.getMonth() + 1).padStart(2, "0");
+    const year = dob.getFullYear();
+    const workPassword = `${day}${month}${year}`;
+
+    const hashedPassword = await bcrypt.hash(workPassword, 12);
+
+    // Create User
+    const user = await new User({
+      name,
+      email: manualWorkEmail,
+      password: hashedPassword,
+      role: role.toLowerCase(),
+    }).save();
+
+    // 🔀 SPLIT LOGIC: Check if admin or employee
+    if (role.toLowerCase() === "admin") {
+      // Create ADMIN in admins collection
+      const admin = await new Admin({
+        userId: user._id,
+        name,
+        email: manualWorkEmail,
+        password: hashedPassword,
+        role: "admin",
+        phone,
+        department,
+        isActive: true,
+      }).save();
+
+      return res.status(201).json({
+        message: "Admin created successfully",
+        admin,
+      });
+    }
+
+    // Create EMPLOYEE in employees collection
+    if (!position || !employeeId) {
+      return res.status(400).json({ message: "Position and Employee ID are required for employees" });
     }
 
     // Check for existing Employee ID or Email
@@ -67,70 +108,49 @@ exports.createEmployee = async (req, res) => {
       $or: [{ employeeId }, { personalEmail }],
     });
     if (existingEmployee) {
-      return res
-        .status(400)
-        .json({ message: "Employee with this ID or email already exists" });
+      return res.status(400).json({ message: "Employee with this ID or email already exists" });
     }
 
-    // Generate work email & password
-    const workEmail = `${name.toLowerCase().replace(/\s+/g, ".")}@company.com`;
-    const dob = new Date(dateOfBirth);
-    const day = String(dob.getDate()).padStart(2, "0");
-    const month = String(dob.getMonth() + 1).padStart(2, "0");
-    const year = dob.getFullYear();
-    const workPassword = `${day}${month}${year}`; // DOB-based initial password
-
-    const hashedPassword = await bcrypt.hash(workPassword, 12);
-
-    // Create User
-    const user = await new User({
-      name,
-      email: workEmail,
-      password: hashedPassword,
-      role: role.toLowerCase(), // 'admin' or 'employee'
-    }).save();
-
-    // Create Employee record
     const employee = await new Employee({
       employeeId,
       name,
+      phone,
       personalEmail,
-      workEmail,
+      workEmail: manualWorkEmail,
       dateOfBirth,
       dateOfJoining,
       department,
       position,
       workPassword,
-      role, // 👈 sets 'Admin' or 'Employee'
+      availableLeaves: 20,
+      role: "Employee",
       userId: user._id,
     }).save();
 
-   
     res.status(201).json({
-      message: `${role} created successfully`,
+      message: "Employee created successfully",
       employee,
     });
   } catch (error) {
     console.error("Create Employee Error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 
 exports.getAdminDetails = async (req, res) => {
   try {
-    const adminId = req.query.id;
+    const userId = req.query.id;
 
-    console.log("demo : ",adminId);
-    
+    console.log("Fetching admin for userId:", userId);
 
-    // if (!adminId) {
-    //   return res.status(400).json({ message: "Admin ID is required" });
-    // }
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
 
-    const admin = await Admin.findById(adminId).select("-password");
-    console.log("admin : ",admin);
-    
+    // Find admin by userId (link to User collection)
+    const admin = await Admin.findOne({ userId }).select("-password");
+    console.log("Admin found:", admin);
 
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
@@ -146,6 +166,7 @@ exports.getAdminDetails = async (req, res) => {
   }
 };
 
+
 // ✅ Admin: Update employee details
 exports.updateEmployee = async (req, res) => {
   try {
@@ -153,6 +174,7 @@ exports.updateEmployee = async (req, res) => {
 
     const {
       name,
+      phone,
       personalEmail,
       dateOfBirth,
       dateOfJoining,
@@ -166,6 +188,7 @@ exports.updateEmployee = async (req, res) => {
       req.params.id,
       {
         name,
+        phone,
         personalEmail,
         dateOfBirth,
         dateOfJoining,
@@ -220,7 +243,12 @@ exports.getLeaveRequests = async (req, res) => {
     // if (!(await ensureAdmin(req, res))) return;
 
     const leaveRequests = await LeaveRequest.find()
-      .populate("employeeId", "name department employeeId role")
+      .populate({
+        path: "employeeId",
+        populate: { path: "userId", select: "name" },
+        select: "name department employeeId role"
+      })
+      .select("leaveType leaveReasonType fromDate toDate fromTime toTime days reason status appliedAt reviewedAt reviewedBy")
       .sort({ appliedAt: -1 });
 
     res.status(200).json(leaveRequests);
@@ -248,14 +276,45 @@ exports.reviewLeaveRequest = async (req, res) => {
         reviewedBy: req.user.userId,
       },
       { new: true }
-    ).populate("employeeId", "name department employeeId");
+    );
 
     if (!leaveRequest)
       return res.status(404).json({ message: "Leave request not found" });
 
+    // ✅ If approved, decrease available leaves
+    if (status === "Approved") {
+      const fromDate = new Date(leaveRequest.fromDate);
+      const toDate = new Date(leaveRequest.toDate);
+
+      // Calculate number of days (inclusive of both start and end dates)
+      const daysDiff = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+
+      console.log(`Approving leave for employeeId: ${leaveRequest.employeeId}, daysDiff: ${daysDiff}`);
+
+      // Update employee's available leaves
+      const employee = await Employee.findByIdAndUpdate(
+        leaveRequest.employeeId,
+        { $inc: { availableLeaves: -daysDiff } },
+        { new: true }
+      );
+
+      if (!employee) {
+        console.log(`Employee not found for id: ${leaveRequest.employeeId}`);
+      } else {
+        console.log(`Leave approved for employee ${employee.name}. Days deducted: ${daysDiff}. Remaining leaves: ${employee.availableLeaves}`);
+      }
+    }
+
+    // Populate the leaveRequest for response
+    const populatedLeaveRequest = await LeaveRequest.findById(leaveRequest._id).populate({
+      path: "employeeId",
+      populate: { path: "userId", select: "name" },
+      select: "name department employeeId availableLeaves"
+    });
+
     res.status(200).json({
       message: `Leave request ${status.toLowerCase()} successfully`,
-      leaveRequest,
+      leaveRequest: populatedLeaveRequest,
     });
   } catch (error) {
     console.error("Review Leave Error:", error);
@@ -286,40 +345,63 @@ exports.getAdminDashboard = async (req, res) => {
 
     // 4️⃣ Attendance Summary (Present / Absent)
     const todayAttendance = 9
-    const presentCount =8
+    const presentCount = 8
     const absentCount = 1
 
     // 5️⃣ Pending Leave Requests
     const pendingRequests = await LeaveRequest.find({ status: "Pending" })
       .limit(5)
-      .populate("employeeId", "name");
+      .populate({
+        path: "employeeId",
+        populate: { path: "userId", select: "name" },
+        select: "name"
+      });
 
     const leaveRequests = pendingRequests.map((r) => ({
-      employeeName: r.employeeId?.name || "Unknown",
+      employeeName: r.employeeId?.userId?.name || r.employeeId?.name || "Unknown",
       leaveType: r.leaveType,
       fromDate: r.fromDate,
       toDate: r.toDate,
       status: r.status,
     }));
 
-    // 6️⃣ Upcoming Birthdays (next 7 days)
+    // 6️⃣ Upcoming Birthdays (next 7 days including wraparound to next year)
     const employees = await Employee.find({}, "name dateOfBirth");
     const now = new Date();
     const upcomingBirthdays = employees
       .filter((emp) => {
         if (!emp.dateOfBirth) return false;
         const dob = new Date(emp.dateOfBirth);
-        const upcomingBirthday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
-        const diffDays = Math.ceil((upcomingBirthday - now) / (1000 * 60 * 60 * 24));
+
+        // Try birthday in current year
+        let upcomingBirthday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+        let diffDays = Math.ceil((upcomingBirthday - now) / (1000 * 60 * 60 * 24));
+
+        // If birthday already passed this year, check next year
+        if (diffDays < 0) {
+          upcomingBirthday = new Date(now.getFullYear() + 1, dob.getMonth(), dob.getDate());
+          diffDays = Math.ceil((upcomingBirthday - now) / (1000 * 60 * 60 * 24));
+        }
+
+        // Return true if birthday is within next 7 days
         return diffDays >= 0 && diffDays <= 7;
       })
-      .map((emp) => ({
-        name: emp.name,
-        date: new Date(emp.dateOfBirth).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-      }));
+      .map((emp) => {
+        const dob = new Date(emp.dateOfBirth);
+        return {
+          name: emp.name,
+          date: new Date(emp.dateOfBirth).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
+        };
+      })
+      .sort((a, b) => {
+        // Sort by day number to show closest birthdays first
+        const aDay = parseInt(a.date.split(" ")[1]);
+        const bDay = parseInt(b.date.split(" ")[1]);
+        return aDay - bDay;
+      });
 
     // ✅ Response
     res.status(200).json({
@@ -332,5 +414,228 @@ exports.getAdminDashboard = async (req, res) => {
   } catch (error) {
     console.error("Error fetching admin dashboard:", error);
     res.status(500).json({ message: "Server error fetching admin dashboard" });
+  }
+};
+
+// ✅ Admin: Update admin profile
+exports.updateAdminProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, department } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: "Admin ID is required" });
+    }
+
+    // Update admin record by _id
+    const admin = await Admin.findByIdAndUpdate(
+      id,
+      { name, phone, department },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.status(200).json({
+      message: "Admin profile updated successfully",
+      admin,
+    });
+  } catch (error) {
+    console.error("Error updating admin profile:", error);
+    res.status(500).json({ message: "Server error updating admin profile" });
+  }
+};
+
+// ✅ Admin: Change password
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Both fields are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password too short (min 6 chars)' });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Incorrect current password' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change Password Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ✅ Admin: Update leave balance for a specific employee
+exports.updateLeaveBalance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { availableLeaves } = req.body;
+
+    console.log('Update Leave Balance - Params:', req.params);
+    console.log('Update Leave Balance - Body:', req.body);
+
+    if (!id || availableLeaves === undefined) {
+      return res.status(400).json({ message: 'Employee ID and availableLeaves are required' });
+    }
+
+    const employee = await Employee.findOneAndUpdate(
+      { employeeId: id },
+      { availableLeaves },
+      { new: true }
+    );
+
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    res.status(200).json({
+      message: 'Leave balance updated successfully',
+      employee,
+    });
+  } catch (error) {
+    console.error('Update Leave Balance Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ✅ Admin: Update employee profile (excluding role)
+exports.updateEmployeeProfile = async (req, res) => {
+  try {
+    // if (!(await ensureAdmin(req, res))) return;
+
+    const {
+      name,
+      phone,
+      personalEmail,
+      dateOfBirth,
+      dateOfJoining,
+      allocatedLeaves,
+      department,
+      position,
+      role,
+    } = req.body;
+
+    // Check if role is changing to Admin
+    if (role === 'Admin') {
+      const currentEmployee = await Employee.findOne({ employeeId: req.params.id });
+
+      if (currentEmployee && currentEmployee.role !== 'Admin') {
+        // ✨ MIGRATION LOGIC: Employee -> Admin
+        console.log(`Migrating Employee ${currentEmployee.name} to Admin collection...`);
+
+        // 1. Create Admin Record
+        const newAdmin = new Admin({
+          userId: currentEmployee.userId,
+          name: name || currentEmployee.name,
+          email: personalEmail || currentEmployee.personalEmail, // Admin uses email (unique), Employee use workEmail/personalEmail. Admin model email is unique. 
+          // Note: Admin model typically uses work email or unique email. Let's use workEmail if we want to be safe or personal? 
+          // Using workEmail is safer as it's definitely unique in Employee.
+          email: currentEmployee.workEmail,
+          password: currentEmployee.workPassword, // This triggers pre-save hash in Admin model
+          role: 'admin',
+          phone: phone || currentEmployee.phone,
+          department: department || currentEmployee.department,
+          isActive: true
+        });
+
+        await newAdmin.save();
+        console.log('Admin record created.');
+
+        // 2. Update User role
+        await User.findByIdAndUpdate(currentEmployee.userId, {
+          role: 'admin',
+          name: name || currentEmployee.name
+        });
+
+        // 3. Delete Employee Record
+        await Employee.findByIdAndDelete(currentEmployee._id);
+        console.log('Old Employee record deleted.');
+
+        return res.status(200).json({
+          message: "Employee promoted to Admin and migrated successfully",
+          employee: newAdmin // Return new admin object structure
+        });
+      }
+    }
+
+    // Normal Update Logic (if not migrating)
+    const updateData = {};
+    if (name !== undefined && name !== '') updateData.name = name;
+    if (phone !== undefined && phone !== '') updateData.phone = phone;
+    if (personalEmail !== undefined && personalEmail !== '') updateData.personalEmail = personalEmail;
+    if (dateOfBirth !== undefined && dateOfBirth !== '') updateData.dateOfBirth = dateOfBirth;
+    if (dateOfJoining !== undefined && dateOfJoining !== '') updateData.dateOfJoining = dateOfJoining;
+    if (allocatedLeaves !== undefined && allocatedLeaves !== '') updateData.allocatedLeaves = parseInt(allocatedLeaves);
+    if (department !== undefined && department !== '') updateData.department = department;
+    if (position !== undefined && position !== '') updateData.position = position;
+    if (role !== undefined && role !== '') updateData.role = role;
+    updateData.updatedAt = new Date();
+
+    const employee = await Employee.findOneAndUpdate(
+      { employeeId: req.params.id },
+      updateData,
+      { new: true }
+    );
+
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found" });
+
+    // Update User name for consistency if name was updated
+    const userUpdate = {};
+    if (name) userUpdate.name = name;
+    if (role) userUpdate.role = role.toLowerCase();
+
+    if (Object.keys(userUpdate).length > 0) {
+      await User.findByIdAndUpdate(employee.userId, userUpdate);
+    }
+
+    res.status(200).json({
+      message: "Employee profile updated successfully",
+      employee,
+    });
+  } catch (error) {
+    console.error("Update Employee Profile Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ✅ Admin: Update leave balances for all employees
+exports.updateAllLeaveBalances = async (req, res) => {
+  try {
+    const { leaveIncrement } = req.body;
+
+    if (leaveIncrement === undefined) {
+      return res.status(400).json({ message: 'leaveIncrement is required' });
+    }
+
+    const result = await Employee.updateMany(
+      {},
+      { $inc: { availableLeaves: leaveIncrement } }
+    );
+
+    res.status(200).json({
+      message: `Leave balances updated for ${result.modifiedCount} employees`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error('Update All Leave Balances Error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

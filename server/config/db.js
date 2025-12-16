@@ -3,27 +3,44 @@ const bcrypt = require('bcryptjs');
 const User = require('../model/userModel');
 const Holiday = require('../model/holiday');
 
-
+require('dotenv').config();
 
 const connectToDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    // Use Atlas connection string from .env, fallback to local for development
+    const mongoUri = process.env.MONGODB_URI ;
+    await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected successfully');
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
     process.exit(1);
   }
 };
+
 const createDefaultAdmin = async () => {
   const adminCount = await User.countDocuments({ role: 'admin' });
   if (adminCount === 0) {
     const hashedPassword = await bcrypt.hash('admin123', 12);
-    await new User({
+    const user = await new User({
       name: 'Admin User',
       email: 'admin@czarcore.com',
       password: hashedPassword,
       role: 'admin'
     }).save();
+
+    // Also create in Admin model
+    const Admin = require('../model/adminModel');
+    await new Admin({
+      userId: user._id,
+      name: 'Admin User',
+      email: 'admin@czarcore.com',
+      password: hashedPassword,
+      role: 'admin',
+      phone: '',
+      department: 'HR',
+      isActive: true,
+    }).save();
+
     console.log('✅ Default admin created: admin@czarcore.com / admin123');
   }
 };

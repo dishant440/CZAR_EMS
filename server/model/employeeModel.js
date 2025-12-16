@@ -33,6 +33,7 @@ const mongoose = require('mongoose');
 const DEPARTMENTS = [
   'HR',
   'SALES',
+  'IT',
   'FINANCE',
   'MARKETING',
   'OPERATIONS',
@@ -48,6 +49,7 @@ const employeeSchema = new mongoose.Schema({
   workEmail: { type: String, lowercase: true, unique: true },
   dateOfBirth: Date,
   dateOfJoining: { type: Date, default: Date.now },
+  allocatedLeaves: { type: Number, default: 20 },
   availableLeaves: { type: Number, default: 20 },
   
   department: { 
