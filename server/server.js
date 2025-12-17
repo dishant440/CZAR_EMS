@@ -42,6 +42,16 @@ app.use((req, res, next) => {
 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+app.use('/uploads', cors({
+  origin: [
+    'http://localhost:5173',
+    'http://192.168.0.221:5173',
+    'https://czarcore.netlify.app',
+    /\.netlify\.app$/
+  ],
+  credentials: true
+}), express.static('uploads'));
+
 // Routes
 app.use('/api', routes);
 

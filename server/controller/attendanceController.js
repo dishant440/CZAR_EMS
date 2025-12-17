@@ -420,6 +420,7 @@ exports.getAttendance = async (req, res) => {
         { name: { $regex: search.trim(), $options: 'i' } },
         { employeeId: { $regex: search.trim(), $options: 'i' } }
       ];
+      console.log("Search query applied:", query);
     }
 
     // req.user is populated by the verifyToken middleware
@@ -446,7 +447,7 @@ exports.getAttendance = async (req, res) => {
     }
 
     // 3. Execute Query with .lean() to get plain JS objects
-    const records = await Attendance.find(query.employeeId ? query : { month: query.month, year: query.year }).lean();
+    const records = await Attendance.find(query).lean();
 
     // 4. Fetch Holidays
     const holidays = await Holiday.find({ year: targetYear }).lean();

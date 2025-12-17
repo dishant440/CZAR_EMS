@@ -25,11 +25,21 @@ exports.getUsers = async (req, res) => {
     // if (!(await ensureAdmin(req, res))) return;
     console.log("hii");
 
+    const { search } = req.query;
+    let query = {};
 
-    const employees = await Employee.find().select("-workPassword");
+    if (search && search.trim()) {
+      query.$or = [
+        { name: { $regex: search.trim(), $options: 'i' } },
+        { employeeId: { $regex: search.trim(), $options: 'i' } },
+        { workEmail: { $regex: search.trim(), $options: 'i' } }
+      ];
+    }
+
+    const employees = await Employee.find(query).select("-workPassword");
     console.log(employees);
 
-    res.status(200).json(employees);
+    res.status(200).json({ employees });
   } catch (error) {
     console.error("Get Users Error:", error);
     res.status(500).json({ message: "Server error" });
@@ -51,6 +61,9 @@ exports.createEmployee = async (req, res) => {
       role = "Employee",
       workEmail: manualWorkEmail, // Rename incoming field to manualWorkEmail to avoid ambiguity
     } = req.body;
+
+    // Get uploaded file path (from Multer middleware)
+    const profilephoto = req.file ? req.file.filename : null;
 
     // Validate required fields
     if (!name || !phone || !personalEmail || !manualWorkEmail || !dateOfBirth || !dateOfJoining || !department) {
@@ -90,6 +103,7 @@ exports.createEmployee = async (req, res) => {
         phone,
         department,
         isActive: true,
+        profilePhoto: profilephoto,
       }).save();
 
       return res.status(201).json({
@@ -125,6 +139,7 @@ exports.createEmployee = async (req, res) => {
       availableLeaves: 20,
       role: "Employee",
       userId: user._id,
+      profilePhoto: profilephoto,
     }).save();
 
     res.status(201).json({

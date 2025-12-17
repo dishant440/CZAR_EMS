@@ -42,6 +42,8 @@ const adminSchema = new mongoose.Schema(
       default: 'HR',
     },
 
+    profilePhoto: { type: String, default: null },
+
     isActive: {
       type: Boolean,
       default: true,
