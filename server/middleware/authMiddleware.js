@@ -68,46 +68,43 @@ const verifyToken = (req, res, next) => {
 
 const verifyAdmin = async (req, res, next) => {
   try {
-    // Debug log to see exactly what is in the token
     console.log("verifyAdmin - req.user:", req.user);
 
-    const { userId, role, email } = req.user;
-
-    // 1. Check Token Content
-    if (!userId) {
-      console.error("verifyAdmin - Missing userId in token");
-      return res.status(403).json({ message: 'Access Forbidden: Invalid token payload' });
+    // Role check
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access denied" });
     }
 
-    if (role !== 'admin') {
-      console.error(`verifyAdmin - Role is ${role}, expected admin`);
-      return res.status(403).json({ message: 'Access Forbidden: Admin privileges required' });
+    // Find admin by userId field (this is the correct field to search by)
+    let admin = await Admin.findOne({ userId: req.user.userId });
+
+    if (!admin) {
+      console.log("verifyAdmin - Admin not found, creating missing admin document");
+      const User = require('../model/userModel');
+      const dbUser = await User.findById(req.user.userId);
+      if (dbUser && dbUser.role === 'admin') {
+        admin = await new Admin({
+          userId: req.user.userId,
+          name: dbUser.name,
+          email: dbUser.email,
+          password: dbUser.password, // Copy password hash
+          role: 'admin',
+          isActive: true,
+        }).save();
+        console.log("verifyAdmin - Created missing admin document");
+      }
     }
 
-    // 2. Check Database
-    // First try by ID (if logged in via adminLogin)
-    let user = await Admin.findById(userId);
-
-    // If not found, try by email (if logged in via regular login where userId = user._id)
-    if (!user && email) {
-      console.log("verifyAdmin - Admin not found by ID (likely User ID), trying email:", email);
-      user = await Admin.findOne({ email: email });
+    if (!admin) {
+      console.log("verifyAdmin - Admin not found in DB");
+      return res.status(403).json({ message: "Admin not found" });
     }
 
-    if (!user) {
-      console.error("verifyAdmin - User not found in Admin collection (by ID or Email)");
-      return res.status(403).json({ message: 'Access Forbidden: Admin account not found' });
-    }
-
-    if (user.role !== 'admin') {
-      console.error("verifyAdmin - User exists but role is not admin in DB");
-      return res.status(403).json({ message: 'Access Forbidden: User is not an admin' });
-    }
-
+    req.admin = admin;
     next();
   } catch (error) {
-    console.error('Admin verification error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("verifyAdmin error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 

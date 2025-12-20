@@ -19,8 +19,22 @@ async function ensureAdmin(req, res) {
   return false;
 }
 
+// ✅ Admin: Get employee by ID
+exports.getEmployeeById = async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.id).select("-workPassword");
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    res.status(200).json({ employee });
+  } catch (error) {
+    console.error("Get Employee By ID Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ✅ Admin: Get all employees
-exports.getUsers = async (req, res) => {
+exports.getAllEmployees = async (req, res) => {
   try {
     // if (!(await ensureAdmin(req, res))) return;
     console.log("hii");
@@ -193,21 +207,21 @@ exports.updateEmployee = async (req, res) => {
       personalEmail,
       dateOfBirth,
       dateOfJoining,
-      availableLeaves,
+      allocatedLeaves,
       department,
       position,
       role,
     } = req.body;
 
-    const employee = await Employee.findByIdAndUpdate(
-      req.params.id,
+    const employee = await Employee.findOneAndUpdate(
+      { employeeId: req.params.employeeId },
       {
         name,
         phone,
         personalEmail,
         dateOfBirth,
         dateOfJoining,
-        availableLeaves,
+        allocatedLeaves,
         department,
         position,
         role,
