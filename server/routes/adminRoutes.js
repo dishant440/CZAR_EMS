@@ -1,47 +1,74 @@
 const express = require('express');
-const multer = require('multer');
 const path = require('path');
+const multer = require('multer');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
-const { getUsers, createEmployee, updateEmployee, deleteEmployee, getLeaveRequests, reviewLeaveRequest, getAdminDashboard, getAdminDetails, updateAdminProfile, changePassword, updateLeaveBalance, updateAllLeaveBalances, updateEmployeeProfile } = require('../controller/adminControlle');
+const {
+    getAllEmployees,
+    getEmployeeById,
+    updateEmployee,
+    deleteEmployee,
+    createEmployee,
+    getAdminDetails,
+    updateAdminProfile,
+    changePassword,
+    getAdminDashboard,
+} = require('../controller/adminControlle');
+
+const { uploadDocument, getDocumentsByEmployee, deleteDocument, getSalarySlipsByEmployee, uploadSalarySlip, deleteSalarySlip, viewDocument } = require('../controller/employeeDocumentController');
+const { getLeaveRequests, reviewLeaveRequest } = require('../controller/adminControlle');
 
 const router = express.Router();
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, '../../uploads/documents/'));
     },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
+    filename: (req, file, cb) => {
+        // Sanitize filename by replacing spaces and special characters
+        const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+        cb(null, `doc_${Date.now()}_${sanitizedName}`);
     }
 });
 
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
+const upload = multer({ storage });
+
+// Configure multer for profile photo uploads
+const profileStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, '../../uploads/'));
     },
-    fileFilter: function (req, file, cb) {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed!'), false);
-        }
+    filename: (req, file, cb) => {
+        cb(null, `profile_${Date.now()}_${file.originalname}`);
     }
 });
 
-router.get('/all-employees', getUsers);
-router.get('/admin-dashboard', getAdminDashboard)
-router.get('/get-admin-details', getAdminDetails)
-router.post('/employees', upload.single('profilephoto'), createEmployee);
-router.put('/employees/:id', updateEmployee);
-router.put('/update/:id', updateAdminProfile);
-router.put('/change-password', verifyToken, changePassword);
-router.delete('/employees/:id', deleteEmployee);
-router.get('/leave-requests', getLeaveRequests);
-router.put('/leave-requests/:id', reviewLeaveRequest);
-router.put('/update-leave-balance/:id', updateLeaveBalance);
-router.put('/update-all-leave-balances', updateAllLeaveBalances);
-router.put('/update-employee/:id', verifyToken, updateEmployeeProfile);
+const uploadProfile = multer({ storage: profileStorage });
+
+// Admin routes
+router.get('/all-employees', verifyToken, verifyAdmin, getAllEmployees);
+router.get('/employee/:id', verifyToken, verifyAdmin, getEmployeeById);
+router.put('/update-employee/:employeeId', verifyToken, verifyAdmin, updateEmployee);
+router.delete('/employee/:id', verifyToken, verifyAdmin, deleteEmployee);
+router.post('/add-employee', verifyToken, verifyAdmin, uploadProfile.single('profilephoto'), createEmployee);
+router.get('/get-admin-details', verifyToken, verifyAdmin, getAdminDetails);
+router.put('/update/:id', verifyToken, verifyAdmin, updateAdminProfile);
+router.put('/change-password', verifyToken, verifyAdmin, changePassword);
+router.get('/admin-dashboard', verifyToken, verifyAdmin, getAdminDashboard);
+
+// Document routes
+router.get('/documents/:employeeId', verifyToken, verifyAdmin, getDocumentsByEmployee);
+router.post('/documents/:employeeId', verifyToken, verifyAdmin, upload.single('document'), uploadDocument);
+router.get('/documents/view/:docId', verifyToken, verifyAdmin, viewDocument);
+router.delete('/documents/:docId', verifyToken, verifyAdmin, deleteDocument);
+
+// Salary slip routes
+router.get('/salary-slips/:employeeId', verifyToken, verifyAdmin, getSalarySlipsByEmployee);
+router.post('/salary-slips/:employeeId', verifyToken, verifyAdmin, upload.single('salarySlip'), uploadSalarySlip);
+router.delete('/salary-slips/:slipId', verifyToken, verifyAdmin, deleteSalarySlip);
+
+// Leave request routes
+router.get('/leave-requests', verifyToken, verifyAdmin, getLeaveRequests);
+router.put('/leave-requests/:id', verifyToken, verifyAdmin, reviewLeaveRequest);
 
 module.exports = router;

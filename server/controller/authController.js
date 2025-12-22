@@ -57,6 +57,7 @@ exports.register = async (req, res) => {
 
     if (role === "admin") {
       await new Admin({
+        userId: user._id,
         name,
         email,
         password: hashedPassword,

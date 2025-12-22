@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 require('dotenv').config();
 
 const routes = require('./routes');
@@ -50,7 +51,7 @@ app.use('/uploads', cors({
     /\.netlify\.app$/
   ],
   credentials: true
-}), express.static('uploads'));
+}), express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api', routes);

@@ -206,12 +206,21 @@ const getEmployeeDashboard = async (req, res) => {
     const todayStr = `${yyyy}-${mm}-${dd}`;
 
     // Check if employee is on leave today
-    const onLeaveToday = await LeaveRequest.countDocuments({
+    const leaveToday = await LeaveRequest.findOne({
       employeeId: employee._id,
       status: "Approved",
       fromDate: { $lte: todayStr },
       toDate: { $gte: todayStr },
     });
+
+    let attendanceStatus = "present";
+    if (leaveToday) {
+      if (leaveToday.leaveReasonType && leaveToday.leaveReasonType.toLowerCase() === "sitevisit") {
+        attendanceStatus = "sitevisit";
+      } else {
+        attendanceStatus = "leave";
+      }
+    }
 
     // Attendance summary (placeholder - you may need to implement actual attendance tracking)
     const attendanceSummary = {
@@ -222,10 +231,9 @@ const getEmployeeDashboard = async (req, res) => {
     const responsePayload = {
       employee: employee.toObject(),
       leaveRequests,
-      onLeaveToday: onLeaveToday > 0,
+      attendanceStatus,
       attendanceSummary,
     };
-
     return res.status(200).json(responsePayload);
   } catch (error) {
     console.error('Get Employee Dashboard Error:', error);
@@ -302,6 +310,8 @@ const getEmployeeDashboard = async (req, res) => {
 
 const Attendance = require('../model/attendanceModel');
 const XLSX = require("xlsx");
+const path = require('path');
+const fs = require('fs');
 
 // --------------------------------------
 // 1) Excel Upload & Save to DB
@@ -379,6 +389,46 @@ const getAttendanceSummary = async (req, res) => {
   }
 };
 
+// Upload profile photo for employee
+const uploadProfilePhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const employee = await Employee.findOne({ userId: req.user.userId });
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee profile not found' });
+    }
+
+    // Delete old profile photo if exists
+    if (employee.profilePhoto) {
+      const oldPhotoPath = path.join(__dirname, 'uploads', employee.profilePhoto);
+      if (fs.existsSync(oldPhotoPath)) {
+        fs.unlinkSync(oldPhotoPath);
+      }
+    }
+
+    // Update employee profile with new photo filename
+    const filename = `profile_${employee._id}_${Date.now()}${path.extname(req.file.originalname)}`;
+    const finalPath = path.join(__dirname, 'uploads', filename);
+
+    // Move file from temp to uploads directory
+    fs.renameSync(req.file.path, finalPath);
+
+    employee.profilePhoto = filename;
+    await employee.save();
+
+    res.status(200).json({
+      message: 'Profile photo uploaded successfully',
+      profilePhoto: filename
+    });
+  } catch (error) {
+    console.error('Upload Profile Photo Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // module.exports = { createAttendance, getAttendanceSummary };
 module.exports = {
   getProfile,
@@ -387,6 +437,7 @@ module.exports = {
   getMyLeaveRequests,
   updateProfile,
   getEmployeeDashboard,
+  uploadProfilePhoto,
   createAttendance,
   getAttendanceSummary
 };
