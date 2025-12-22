@@ -10,6 +10,7 @@ const leaveRequestSchema = new mongoose.Schema({
   toTime: String,
   days: Number,
   reason: String,
+  siteVisitNote: { type: String, default: '' },
   status: { type: String, default: 'Pending' },
   appliedAt: { type: Date, default: Date.now },
   reviewedAt: Date,

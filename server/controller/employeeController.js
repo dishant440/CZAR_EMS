@@ -206,12 +206,21 @@ const getEmployeeDashboard = async (req, res) => {
     const todayStr = `${yyyy}-${mm}-${dd}`;
 
     // Check if employee is on leave today
-    const onLeaveToday = await LeaveRequest.countDocuments({
+    const leaveToday = await LeaveRequest.findOne({
       employeeId: employee._id,
       status: "Approved",
       fromDate: { $lte: todayStr },
       toDate: { $gte: todayStr },
     });
+
+    let attendanceStatus = "present";
+    if (leaveToday) {
+      if (leaveToday.leaveReasonType && leaveToday.leaveReasonType.toLowerCase() === "sitevisit") {
+        attendanceStatus = "sitevisit";
+      } else {
+        attendanceStatus = "leave";
+      }
+    }
 
     // Attendance summary (placeholder - you may need to implement actual attendance tracking)
     const attendanceSummary = {
@@ -222,10 +231,9 @@ const getEmployeeDashboard = async (req, res) => {
     const responsePayload = {
       employee: employee.toObject(),
       leaveRequests,
-      onLeaveToday: onLeaveToday > 0,
+      attendanceStatus,
       attendanceSummary,
     };
-
     return res.status(200).json(responsePayload);
   } catch (error) {
     console.error('Get Employee Dashboard Error:', error);

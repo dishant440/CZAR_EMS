@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../model/userModel");
 const Employee = require("../model/employeeModel");
 const LeaveRequest = require("../model/leaveRequest");
+const Attendance = require("../model/attendanceModel");
 const { sendEmail } = require("../utils/emailService");
 const Admin = require('../model/adminModel')
 
@@ -310,7 +311,7 @@ exports.reviewLeaveRequest = async (req, res) => {
     if (!leaveRequest)
       return res.status(404).json({ message: "Leave request not found" });
 
-    // ✅ If approved, decrease available leaves
+    // ✅ If approved, decrease available leaves (skip for siteVisit reason)
     if (status === "Approved") {
       const fromDate = new Date(leaveRequest.fromDate);
       const toDate = new Date(leaveRequest.toDate);
@@ -320,17 +321,105 @@ exports.reviewLeaveRequest = async (req, res) => {
 
       console.log(`Approving leave for employeeId: ${leaveRequest.employeeId}, daysDiff: ${daysDiff}`);
 
-      // Update employee's available leaves
-      const employee = await Employee.findByIdAndUpdate(
-        leaveRequest.employeeId,
-        { $inc: { availableLeaves: -daysDiff } },
-        { new: true }
-      );
+      let employee = null;
+      if (!leaveRequest.leaveReasonType || leaveRequest.leaveReasonType.toLowerCase() !== 'sitevisit') {
+        // Update employee's available leaves for non-site visit leaves (allow negative for unpaid)
+        employee = await Employee.findByIdAndUpdate(
+          leaveRequest.employeeId,
+          { $inc: { availableLeaves: -daysDiff } },
+          { new: true }
+        );
 
-      if (!employee) {
-        console.log(`Employee not found for id: ${leaveRequest.employeeId}`);
+        if (!employee) {
+          console.log(`Employee not found for id: ${leaveRequest.employeeId}`);
+        } else {
+          console.log(`Leave approved for employee ${employee.name}. Days deducted: ${daysDiff}. Remaining leaves: ${employee.availableLeaves}`);
+        }
       } else {
-        console.log(`Leave approved for employee ${employee.name}. Days deducted: ${daysDiff}. Remaining leaves: ${employee.availableLeaves}`);
+        // For site visit, fetch employee without updating leaves
+        employee = await Employee.findById(leaveRequest.employeeId);
+        if (!employee) {
+          console.log(`Employee not found for id: ${leaveRequest.employeeId}`);
+        } else {
+          console.log(`Site visit approved for employee ${employee.name}. No leave deduction.`);
+        }
+      }
+
+      if (employee) {
+        // Update attendance records for each leave date
+        let currentDate = new Date(fromDate);
+        while (currentDate <= toDate) {
+          const month = currentDate.getMonth() + 1;
+          const year = currentDate.getFullYear();
+          const day = currentDate.getDate();
+
+          // Find existing attendance record or create new
+          let attRecord = await Attendance.findOne({
+            employeeId: leaveRequest.employeeId.toString(),
+            month,
+            year
+          });
+
+          let dailyData;
+          if (leaveRequest.leaveReasonType && leaveRequest.leaveReasonType.toLowerCase() === 'sitevisit') {
+            dailyData = {
+              day,
+              date: new Date(currentDate),
+              status: "Site Visit",
+              inTime: null,
+              outTime: null,
+              totalHours: 8, // Full day for site visit
+              times: [],
+              overtime: 0,
+              leaveType: "Site Visit"
+            };
+          } else {
+            dailyData = {
+              day,
+              date: new Date(currentDate),
+              status: "Leave",
+              inTime: null,
+              outTime: null,
+              totalHours: 0,
+              times: [],
+              overtime: 0,
+              leaveType: leaveRequest.leaveType || null
+            };
+          }
+
+          if (!attRecord) {
+            // Create new attendance record with this day
+            attRecord = new Attendance({
+              employeeId: leaveRequest.employeeId.toString(),
+              name: employee.name,
+              month,
+              year,
+              totalMonthlyHours: 0,
+              totalMonthlyOvertime: 0,
+              attendance: [dailyData]
+            });
+          } else {
+            // Update or add daily record
+            const existingDaily = attRecord.attendance.find(d => d.day === day);
+            if (existingDaily) {
+              // Override existing
+              Object.assign(existingDaily, dailyData);
+            } else {
+              // Add new
+              attRecord.attendance.push(dailyData);
+            }
+
+            // Recalculate totalMonthlyHours (sum of Present and Site Visit hours)
+            attRecord.totalMonthlyHours = attRecord.attendance
+              .filter(a => a.status === "Present" || a.status === "Site Visit")
+              .reduce((sum, a) => sum + (a.totalHours || 0), 0);
+          }
+
+          await attRecord.save();
+
+          // Move to next day
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
       }
     }
 

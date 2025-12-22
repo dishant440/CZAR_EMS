@@ -500,9 +500,17 @@ exports.getAttendance = async (req, res) => {
             dayRecord.status = 'Holiday';
           } else {
             // Priority 2: Leave (only if not a holiday)
-            const isLeave = empLeaves.some(l => isDateInRange(date, l.fromDate, l.toDate));
-            if (isLeave) {
-              dayRecord.status = 'Leave';
+            // Fix: Check for specific leave type (Site Visit)
+            const matchedLeave = empLeaves.find(l => isDateInRange(date, l.fromDate, l.toDate));
+
+            if (matchedLeave) {
+              if (matchedLeave.leaveReasonType && matchedLeave.leaveReasonType.toLowerCase() === 'sitevisit') {
+                dayRecord.status = 'Site Visit';
+                dayRecord.leaveType = matchedLeave.leaveReasonType; // Ensure frontend gets this
+              } else {
+                dayRecord.status = 'Leave';
+                dayRecord.leaveType = matchedLeave.leaveType;
+              }
             }
           }
         });

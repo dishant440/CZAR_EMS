@@ -15,6 +15,7 @@ const {
 } = require('../controller/adminControlle');
 
 const { uploadDocument, getDocumentsByEmployee, deleteDocument, getSalarySlipsByEmployee, uploadSalarySlip, deleteSalarySlip, viewDocument } = require('../controller/employeeDocumentController');
+const { getLeaveRequests, reviewLeaveRequest } = require('../controller/adminControlle');
 
 const router = express.Router();
 
@@ -65,5 +66,9 @@ router.delete('/documents/:docId', verifyToken, verifyAdmin, deleteDocument);
 router.get('/salary-slips/:employeeId', verifyToken, verifyAdmin, getSalarySlipsByEmployee);
 router.post('/salary-slips/:employeeId', verifyToken, verifyAdmin, upload.single('salarySlip'), uploadSalarySlip);
 router.delete('/salary-slips/:slipId', verifyToken, verifyAdmin, deleteSalarySlip);
+
+// Leave request routes
+router.get('/leave-requests', verifyToken, verifyAdmin, getLeaveRequests);
+router.put('/leave-requests/:id', verifyToken, verifyAdmin, reviewLeaveRequest);
 
 module.exports = router;
