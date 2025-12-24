@@ -84,7 +84,7 @@ const createDefaultEmployee = async () => {
 
     await new Employee({
       userId: user._id,
-      employeeId: 'EMP001',
+      employeeId: 1,
       name: 'Default Employee',
       personalEmail: 'employee@personal.com',
       workEmail: 'employee@czarcore.com',
