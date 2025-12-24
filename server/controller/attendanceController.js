@@ -305,7 +305,7 @@ exports.uploadAttendance = async (req, res) => {
       dataRows
         .filter((r) => r[0] && r[1])
         .map(async (row) => {
-          const employeeId = row[0]?.toString().trim();
+          const employeeId = parseInt(row[0]?.toString().trim());
           const name = row[1]?.toString().trim();
           // Check if employee exists in DB
           const dbEmployee = await Employee.findOne({ employeeId });
@@ -416,10 +416,19 @@ exports.getAttendance = async (req, res) => {
 
     // Add search filter if provided
     if (search && search.trim()) {
-      query.$or = [
-        { name: { $regex: search.trim(), $options: 'i' } },
-        { employeeId: { $regex: search.trim(), $options: 'i' } }
-      ];
+      const searchVal = search.trim();
+      const numericSearch = parseInt(searchVal);
+
+      if (!isNaN(numericSearch)) {
+        query.$or = [
+          { name: { $regex: searchVal, $options: 'i' } },
+          { employeeId: numericSearch }
+        ];
+      } else {
+        query.$or = [
+          { name: { $regex: searchVal, $options: 'i' } }
+        ];
+      }
       console.log("Search query applied:", query);
     }
 
@@ -495,9 +504,10 @@ exports.getAttendance = async (req, res) => {
           const date = new Date(targetYear, targetMonth - 1, dayRecord.day);
 
           // Priority 1: Holiday
-          const isHoliday = holidays.some(h => isDateInRange(date, h.fromDate, h.toDate));
-          if (isHoliday) {
+          const matchedHoliday = holidays.find(h => isDateInRange(date, h.fromDate, h.toDate));
+          if (matchedHoliday) {
             dayRecord.status = 'Holiday';
+            dayRecord.holidayName = matchedHoliday.name || 'Public Holiday';
           } else {
             // Priority 2: Leave (only if not a holiday)
             // Fix: Check for specific leave type (Site Visit)

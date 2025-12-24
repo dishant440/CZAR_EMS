@@ -67,4 +67,38 @@ const addSampleHolidays = async () => {
   }
 };
 
-module.exports = { createDefaultAdmin, addSampleHolidays, connectToDB };
+
+const createDefaultEmployee = async () => {
+  const User = require('../model/userModel');
+  const Employee = require('../model/employeeModel');
+
+  const empCount = await User.countDocuments({ role: 'employee' });
+  if (empCount === 0) {
+    const hashedPassword = await bcrypt.hash('employee123', 12);
+    const user = await new User({
+      name: 'Default Employee',
+      email: 'employee@czarcore.com',
+      password: hashedPassword,
+      role: 'employee'
+    }).save();
+
+    await new Employee({
+      userId: user._id,
+      employeeId: 'EMP001',
+      name: 'Default Employee',
+      personalEmail: 'employee@personal.com',
+      workEmail: 'employee@czarcore.com',
+      department: 'IT',
+      role: 'Employee',
+      dateOfJoining: new Date(),
+      allocatedLeaves: 20,
+      availableLeaves: 20,
+      salary: 50000,
+      position: 'Software Developer'
+    }).save();
+
+    console.log('✅ Default employee created: employee@czarcore.com / employee123');
+  }
+};
+
+module.exports = { createDefaultAdmin, createDefaultEmployee, addSampleHolidays, connectToDB };
