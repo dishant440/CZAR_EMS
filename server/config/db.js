@@ -8,14 +8,14 @@ require('dotenv').config();
 const connectToDB = async () => {
   try {
     // Use Atlas connection string from .env, fallback to local for development
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/czar_ems';
+    const mongoUri = process.env.MONGODB_URI;
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected successfully');
   } catch (atlasError) {
     console.error('❌ MongoDB Atlas connection error:', atlasError.message);
     console.log('🔄 Attempting to connect to local MongoDB...');
     try {
-      await mongoose.connect('mongodb://localhost:27017/czar_ems');
+      await mongoose.connect('');
       console.log('✅ Connected to local MongoDB successfully');
     } catch (localError) {
       console.error('❌ Local MongoDB connection error:', localError.message);

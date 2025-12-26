@@ -32,15 +32,13 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const DEPARTMENTS = [
-  'HR',
-  'SALES',
   'IT',
-  'FINANCE',
-  'MARKETING',
-  'OPERATIONS',
-  'RESEARCH AND DEVELOPMENT',
   'PRODUCTION',
-  'SUPPORT'
+  'R&D',
+  'SUPPORT',
+  'HR',
+  'FINANCE',
+  'OTHER'
 ];
 
 const employeeSchema = new mongoose.Schema({
