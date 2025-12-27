@@ -1,12 +1,11 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv').config();
 
 const routes = require('./routes');
 const { errorHandler } = require('./middleware/errorHandler');
-const { connectToDB, createDefaultAdmin } = require('./config/db');
+const { connectToDB } = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -15,18 +14,14 @@ const PORT = process.env.PORT || 5002;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'http://192.168.0.221:5173', // Local network access
-    'https://czarcore.netlify.app',
-    /\.netlify\.app$/
+    'http://192.168.0.221:5173', 
   ],
   credentials: true
 }));
 
-// Custom JSON parser to handle leading/trailing whitespace
 app.use((req, res, next) => {
   const contentType = req.headers['content-type'] || '';
 
-  // Skip multipart/form-data (file uploads) and let multer handle it
   if (contentType.includes('multipart/form-data')) {
     return next();
   }
@@ -54,8 +49,6 @@ app.use('/uploads', cors({
   origin: [
     'http://localhost:5173',
     'http://192.168.0.221:5173',
-    'https://czarcore.netlify.app',
-    /\.netlify\.app$/
   ],
   credentials: true
 }), express.static(path.join(__dirname, '../uploads')));
@@ -68,7 +61,6 @@ app.use(errorHandler);
 
 const startServer = async () => {
   await connectToDB();
-  await createDefaultAdmin();
   app.listen(PORT, '0.0.0.0', () => console.log(`server running on port ${PORT}`));
 };
 
