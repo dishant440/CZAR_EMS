@@ -67,7 +67,10 @@ const employeeSchema = new mongoose.Schema({
 
   phone: String,
   address: String,
-  profilePhoto: String,
+  profilePhoto: {
+    data: Buffer,
+    contentType: String
+  },
   salary: { type: Number, min: 0 },
 
   workPassword: String,
