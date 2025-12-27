@@ -8,8 +8,8 @@ require('dotenv').config();
 const connectToDB = async () => {
   try {
     // Use Atlas connection string from .env, fallback to local for development
-    // const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/ems";
-    const mongoUri = "mongodb://127.0.0.1:27017/ems";
+    const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ems";
+    // const mongoUri = "mongodb://127.0.0.1:27017/ems";
     console.log("mongoUri : ", mongoUri);
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected successfully');

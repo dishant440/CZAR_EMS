@@ -10,6 +10,10 @@ const documentSubSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    originalName: {
+        type: String,
+        required: true
+    },
     uploadDate: {
         type: Date,
         default: Date.now
@@ -66,6 +70,10 @@ const salarySlipSubSchema = new mongoose.Schema({
         max: new Date().getFullYear() + 10
     },
     filename: {
+        type: String,
+        required: true
+    },
+    originalName: {
         type: String,
         required: true
     },

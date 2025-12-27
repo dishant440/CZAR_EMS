@@ -3,7 +3,7 @@ const path = require('path');
 const multer = require('multer');
 const { verifyToken } = require('../middleware/authMiddleware');
 const { getProfile, changePassword, submitLeaveRequest, getMyLeaveRequests, getEmployeeDashboard, updateProfile, uploadProfilePhoto } = require('../controller/employeeController');
-const { getMyDocuments, uploadMyDocument, getMySalarySlips, deleteSalarySlip, uploadMySalarySlip } = require('../controller/employeeDocumentController');
+const { getMyDocuments, uploadMyDocument, getMySalarySlips, deleteSalarySlip, uploadMySalarySlip, viewDocument } = require('../controller/employeeDocumentController');
 
 const router = express.Router();
 
@@ -29,6 +29,7 @@ router.put('/change-password', verifyToken, changePassword);
 router.post('/leave-requests', verifyToken, submitLeaveRequest);
 router.get('/my-leave-requests', verifyToken, getMyLeaveRequests);
 router.get('/documents', verifyToken, getMyDocuments);
+router.get('/documents/view/:docId', verifyToken, viewDocument);
 router.post('/upload-document', verifyToken, upload.single('file'), uploadMyDocument);
 router.post('/upload-profile-photo', verifyToken, profileUpload.single('profilePhoto'), uploadProfilePhoto);
 
