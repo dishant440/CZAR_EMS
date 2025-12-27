@@ -15,8 +15,10 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://192.168.0.221:5173', 
+    'http://192.168.29.66:5173',
+    'http://192.168.0.197:5173'
   ],
-  credentials: true
+  // credentials: true
 }));
 
 app.use((req, res, next) => {
@@ -49,6 +51,7 @@ app.use('/uploads', cors({
   origin: [
     'http://localhost:5173',
     'http://192.168.0.221:5173',
+    'http://192.168.29.66:5173'
   ],
   credentials: true
 }), express.static(path.join(__dirname, '../uploads')));

@@ -5,7 +5,6 @@ const {
     connectToDB,
     createDefaultEmployee,
     createDefaultAdmin,
-    addSampleHolidays,
 } = require('./config/db.js');
 
 const seedDatabase = async () => {
@@ -17,6 +16,7 @@ const seedDatabase = async () => {
         // console.log(user)
         await createDefaultAdmin();
         // console.log('✅ Database seeded successfully');
+        
         process.exit(0);
     } catch (error) {
         console.error('❌ Seeding failed:', error);

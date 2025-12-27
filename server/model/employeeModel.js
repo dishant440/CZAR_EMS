@@ -34,7 +34,7 @@ const bcrypt = require('bcryptjs');
 const DEPARTMENTS = [
   'IT',
   'PRODUCTION',
-  'R&D',
+  'RESEARCH AND DEVELOPMENT',
   'SUPPORT',
   'HR',
   'FINANCE',

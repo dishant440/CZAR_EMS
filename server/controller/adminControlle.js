@@ -138,12 +138,15 @@ exports.createEmployee = async (req, res) => {
     const profilephoto = req.file ? req.file.filename : null;
 
     // Validate required fields
+    console.log(manualWorkEmail)
     if (!name || !phone || !personalEmail || !manualWorkEmail || !dateOfBirth || !dateOfJoining || !department) {
       return res.status(400).json({ message: "Name, phone, personal & work email, DOB, joining date, and department are required" });
     }
 
     // Check if work email already exists check in User collection
-    if (await User.findOne({ email: manualWorkEmail.toLowerCase() })) {
+    const workEmailExists = await User.findOne({ email: manualWorkEmail.toLowerCase() });
+    console.log("Work Email Exists Check:", workEmailExists);
+    if (workEmailExists) {
       return res.status(400).json({ message: "Work email already exists" });
     }
 
