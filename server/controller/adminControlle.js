@@ -486,18 +486,19 @@ exports.reviewLeaveRequest = async (req, res) => {
             };
           }
 
-          if (!attRecord) {
+          // if (!attRecord) {
             // Create new attendance record with this day
-            attRecord = new Attendance({
-              employeeId: employee.employeeId,
-              name: employee.name,
-              month,
-              year,
-              totalMonthlyHours: 0,
-              totalMonthlyOvertime: 0,
-              attendance: [dailyData]
-            });
-          } else {
+            // attRecord = new Attendance({
+            //   employeeId: employee.employeeId,
+            //   name: employee.name,
+            //   month,
+            //   year,
+            //   totalMonthlyHours: 0,
+            //   totalMonthlyOvertime: 0,
+            //   attendance: [dailyData]
+            // });
+          // } 
+          if(attRecord) {
             // Update or add daily record
             const existingDaily = attRecord.attendance.find(d => d.day === day);
             if (existingDaily) {
